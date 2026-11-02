@@ -21,6 +21,7 @@ raw:
 exclude:
   - when: '{{ne .Inputs.project_type.Value "cli"}}'
     paths:
+      - github/dependabot.yml
       - src/cli.rs
       - src/commands.rs
       - src/error.rs
@@ -34,6 +35,7 @@ exclude:
       - tests/server.rs
       - Dockerfile
       - .dockerignore
+      - github/dependabot-service.yml
       - github/workflows/docker.yml
   - paths:
       - TEMPLATE.md
@@ -43,3 +45,7 @@ exclude:
 rename:
   - from: github
     to: .github
+  # a service also watches its Dockerfile, so it ships its own dependabot.yml
+  - from: .github/dependabot-service.yml
+    to: .github/dependabot.yml
+    when: '{{eq .Inputs.project_type.Value "service"}}'
