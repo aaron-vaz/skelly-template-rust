@@ -1,0 +1,7 @@
+[toolchain]
+# Pinned on purpose: with clippy::pedantic and -D warnings, a new Rust release
+# can turn a green tree red with no code changes. Bump deliberately, as its own
+# commit, together with rust-version in Cargo.toml.
+channel = "{{.Inputs.rust_version.Value}}"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

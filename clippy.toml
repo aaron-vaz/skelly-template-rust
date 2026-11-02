@@ -1,0 +1,4 @@
+# unwrap()/expect() are warned on in library and binary code (see Cargo.toml),
+# but they are the right tool inside tests: a panic IS the failure report.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true

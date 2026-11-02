@@ -1,0 +1,15 @@
+# Build output
+/target/
+/build/
+
+# Editor / OS noise
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local configuration and secrets
+.env
+*.local.toml
+
+# Cargo.lock is committed: this project ships a binary{{if eq .Inputs.project_type.Value "service"}} and a container image{{end}}

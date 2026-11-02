@@ -1,0 +1,65 @@
+name: Template test
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Renders every variant of the template with skelly and runs the generated
+# project's own checks, so a broken template is caught here and not by the
+# first project created from it.
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        type: [cli, service]
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.26'
+
+    - name: Install skelly
+      # The module proxy can serve an old main for a while after a merge, so ask git directly
+      run: GOPROXY=direct go install github.com/aaron-vaz/skelly/cmd/skelly@main
+
+    - name: Render ${{ matrix.type }}
+      run: skelly init . -dst "$RUNNER_TEMP/example-app" -no-input -set project_name=example-app -set project_type=${{ matrix.type }}
+
+    - name: Look for template markers left in the output
+      run: |
+        if grep -rIn --exclude-dir=.github '{{' "$RUNNER_TEMP/example-app"; then
+          echo "unrendered template markers" >&2
+          exit 1
+        fi
+        test ! -e "$RUNNER_TEMP/example-app/TEMPLATE.md"
+        test -d "$RUNNER_TEMP/example-app/.github/workflows"
+
+    - name: Install tooling
+      working-directory: ${{ runner.temp }}/example-app
+      run: make deps
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: ${{ runner.temp }}/example-app
+
+    - name: Check the generated project
+      working-directory: ${{ runner.temp }}/example-app
+      run: make all
+
+    - name: Smoke test the service
+      if: matrix.type == 'service'
+      working-directory: ${{ runner.temp }}/example-app
+      run: |
+        ADDR=127.0.0.1:18080 ./target/release/example-app &
+        pid=$!
+        for _ in $(seq 1 50); do curl -sf http://127.0.0.1:18080/healthz && break; sleep 0.2; done
+        curl -sf http://127.0.0.1:18080/healthz
+        kill -TERM "$pid"
+        wait "$pid"

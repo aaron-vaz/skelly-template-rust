@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/aaron-vaz/skelly/main/skelly.schema.json
+name: skelly-template-rust
+description: A Rust command line application or web service, with Makefile, pinned toolchain, strict lints, tests, CI and releases
+inputs:
+  project_name:
+    description: The crate name, also used as the binary name (letters, digits, - and _, starting with a letter)
+  project_type:
+    description: What to generate, a command line app or a web service
+    default: cli
+    choices: [cli, service]
+  owner:
+    description: The GitHub user or organisation that will own the repository
+    default: aaron-vaz
+  rust_version:
+    description: The Rust toolchain to pin, as a full version (written to rust-toolchain.toml and used as the minimum supported version)
+    default: "1.97.0"
+# GitHub workflow files use ${{ }} themselves, so they are copied as-is
+raw:
+  - github
+# Everything that only applies to one kind of project, plus the template's own files
+exclude:
+  - when: '{{ne .Inputs.project_type.Value "cli"}}'
+    paths:
+      - src/cli.rs
+      - src/commands.rs
+      - src/error.rs
+      - tests/cli.rs
+      - github/workflows/release.yml
+  - when: '{{ne .Inputs.project_type.Value "service"}}'
+    paths:
+      - src/config.rs
+      - src/server.rs
+      - src/telemetry.rs
+      - tests/server.rs
+      - Dockerfile
+      - .dockerignore
+      - github/workflows/docker.yml
+  - paths:
+      - TEMPLATE.md
+      - .github
+# The files for generated projects ship as github/, so GitHub does not run them (or
+# Dependabot) in this repository, where the real .github holds the template's own CI
+rename:
+  - from: github
+    to: .github

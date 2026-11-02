@@ -1,0 +1,31 @@
+name: CI
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # rust-toolchain.toml is the one place the version is written
+    - name: Install dependencies
+      run: make deps
+
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Lint
+      run: make lint
+
+    - name: Test
+      run: make test
+
+    - name: Build
+      run: make build
